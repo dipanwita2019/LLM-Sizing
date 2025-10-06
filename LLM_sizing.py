@@ -1,6 +1,54 @@
 import streamlit as st
 import pandas as pd
 import math
+import hashlib
+
+# ===== PASSWORD PROTECTION =====
+def check_password():
+    """Returns True if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        # Replace this hash with your own generated hash
+        # Current hash is for password: "password"
+        correct_password_hash = "643435139fa71bb855e0e4375d5e77268fcffaa97f118300d349e746414f93e2"
+
+        entered_hash = hashlib.sha256(st.session_state["password"].encode()).hexdigest()
+
+        if entered_hash == correct_password_hash:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if password is validated
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show login screen
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("🔒 LLM Sizer - Login")
+    st.markdown("**Enter password to access the tool**")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.text_input(
+        "Password",
+        type="password",
+        on_change=password_entered,
+        key="password",
+        help="Contact admin if you don't have access"
+    )
+
+    if "password_correct" in st.session_state and not st.session_state["password_correct"]:
+        st.error("❌ Incorrect password. Please try again.")
+
+    return False
+
+
+# Check password before showing app
+if not check_password():
+    st.stop()
+# ===== END PASSWORD PROTECTION =====
 
 # Initialize session state
 if 'calculated' not in st.session_state:
@@ -124,7 +172,7 @@ st.sidebar.markdown("---")
 st.sidebar.subheader("3. GPU Configuration")
 gpu_options = {
     "RTX Ada 6000 (48GB)": {"memory": 48, "bandwidth": 0.96, "compute": 91},
-    "Blackwell 5000 PCIe16 (48GB)": {"memory": 48, "bandwidth": 1.5, "compute": 250},
+    "Blackwell 5000 PCIe16 (96GB)": {"memory": 96, "bandwidth": 1.5, "compute": 250},
     "Blackwell 6000 PCIe16 (96GB)": {"memory": 96, "bandwidth": 1.8, "compute": 380},
 }
 
@@ -178,7 +226,7 @@ if st.session_state.calculated:
     # ========================================
     st.subheader("Step 1: KV Cache Size per Token")
 
-    kv_cache_per_token_bytes = 2 * 2 * model["layers"] * model["hidden"]
+    kv_cache_per_token_bytes = 2 * precision_bytes * model["layers"] * model["hidden"]
     kv_cache_per_token_gb = kv_cache_per_token_bytes / 1e9
 
     col1, col2 = st.columns([1, 1])
@@ -186,19 +234,19 @@ if st.session_state.calculated:
         st.markdown(f"""
         <div class="formula-box">
         <strong>Formula:</strong><br>
-        KV Cache per token = 2 × 2 × n_layers × d_model<br>
-        = 2 × 2 × {model['layers']} × {model['hidden']}<br>
+        KV Cache per token = 2 × precision_bytes × n_layers × d_model<br>
+        = 2 × {precision_bytes} × {model['layers']} × {model['hidden']}<br>
         = {kv_cache_per_token_bytes:,} bytes/token<br>
         ≈ <strong>{kv_cache_per_token_gb:.6f} GB/token</strong>
         </div>
         """, unsafe_allow_html=True)
 
     with col2:
-        st.markdown("""
+        st.markdown(f"""
         <div class="info-box">
         <strong>Why this formula?</strong><br>
         • First 2: Key + Value matrices<br>
-        • Second 2: FP16 precision (2 bytes)<br>
+        • precision_bytes: {precision} precision ({precision_bytes} bytes)<br>
         • n_layers: Each layer has its own cache<br>
         • d_model: Size of hidden representation
         </div>
@@ -342,10 +390,10 @@ if st.session_state.calculated:
         st.markdown(f"""
         <div class="formula-box">
         <strong>Formula:</strong><br>
-        Prefill Time per Token = Model Weights ÷ GPU Compute<br>
+        Prefill Time per Token = (Params × 2) ÷ GPU Compute<br>
         <br>
-        = ({model['params']}B params × 2) FLOP ÷ {gpu['compute']} TFLOPS<br>
-        = {model['params'] * 2} TFLOP ÷ {gpu['compute']} TFLOPS<br>
+        = ({model['params']}B params × 2) ÷ {gpu['compute']} TFLOPS<br>
+        = {model['params'] * 2}B FLOPs ÷ {gpu['compute']} TFLOPS<br>
         = <strong>{prefill_time_ms:.3f} ms/token</strong>
         </div>
         """, unsafe_allow_html=True)
@@ -555,7 +603,7 @@ if st.session_state.calculated:
                 "GPU Memory": f"{gpu['memory']} GB",
                 "Fits?": "✅" if fits else "❌",
                 "Strategy": "Tensor Parallelism (TP)" if fits else "Requires TP",
-                "Max Concurrent Users": max_concurrent_multi
+                "Max Concurrent Requests": max_concurrent_multi
             })
 
         st.dataframe(pd.DataFrame(gpu_configs), hide_index=True, use_container_width=True)
@@ -638,7 +686,7 @@ if st.session_state.calculated:
             "Time to First Token (TTFT)",
             "Total Response Time",
             "Tokens per Second",
-            "Max Concurrent Users"
+            "Max Concurrent Requests"
         ],
         "Actual": [
             f"{ttft:.2f}s",
@@ -722,7 +770,7 @@ else:
         ### Capacity Planning
         - **Memory Requirements** - Model weights + KV cache
         - **GPU Count** - How many GPUs you need
-        - **Concurrent Users** - Maximum capacity
+        - **Concurrent Requests** - Maximum capacity
         - **Multi-GPU Strategy** - TP/DP recommendations
         """)
 
@@ -738,7 +786,7 @@ else:
         ###     Getting Started
 
         1. **Select a Model** - Choose preset or custom
-        2. **Define Workload** - Context length & concurrent users
+        2. **Define Workload** - Context length & concurrent requests
         3. **Pick GPU** - Select from available options
         4. **Calculate** - Get instant sizing results
 
@@ -757,7 +805,7 @@ else:
         st.markdown("""
         **1. KV Cache per Token**
         ```
-        2 × 2 × n_layers × d_model
+        2 × precision_bytes × n_layers × d_model
         ```
         *Memory needed to cache each token*
 
@@ -777,7 +825,7 @@ else:
         ```
         Max Tokens ÷ Context per Request
         ```
-        *Maximum simultaneous users*
+        *Maximum simultaneous requests*
         """)
 
     with col2:
