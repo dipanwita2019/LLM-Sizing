@@ -266,89 +266,10 @@ if st.session_state.calculated:
     gpus_needed = math.ceil(total_memory_gb / gpu["memory"])
 
     # ========================================
-    # NOW DISPLAY RESULTS - PERFORMANCE FIRST
+    # NOW DISPLAY RESULTS - GPU REQUIREMENTS FIRST
     # ========================================
 
     st.header("📋 Recommendations & Summary")
-    st.markdown("---")
-
-    # ========================================
-    # Performance Assessment - TOP SECTION
-    # ========================================
-    st.subheader("⚡ Performance Assessment")
-    st.info("**Note:** Performance metrics shown below are based on a single GPU deployment")
-
-    # Performance Metrics
-    st.markdown("**Current Performance vs Targets:**")
-
-    perf_summary = pd.DataFrame({
-        "Metric": [
-            "Time to First Token (TTFT)",
-            "Total Response Time",
-            "Tokens per Second",
-            "Max Concurrent Requests"
-        ],
-        "Actual": [
-            f"{ttft:.2f}s",
-            f"{total_latency:.2f}s",
-            f"{tokens_per_second:.1f}",
-            f"{max_concurrent_avg}"
-        ],
-        "Target": [
-            f"{ttft_target}s",
-            f"{latency_target}s",
-            f"{tps_target}",
-            f"{n_concurrent}"
-        ],
-        "Status": [
-            "✅" if ttft < ttft_target else "❌",
-            "✅" if total_latency < latency_target else "❌",
-            "✅" if tokens_per_second > tps_target else "❌",
-            "✅" if max_concurrent_avg >= n_concurrent else "❌"
-        ]
-    })
-
-    st.dataframe(perf_summary, hide_index=True, use_container_width=True)
-
-    # Optimization Strategies
-    st.markdown("---")
-    st.markdown("**Optimization Strategies:**")
-
-    col1, col2, col3 = st.columns(3)
-
-    with col1:
-        st.markdown("""
-        <div class="info-box">
-        <strong>Reduce Latency</strong><br><br>
-        • Higher compute GPUs<br>
-        • Enable FlashAttention<br>
-        • Speculative decoding<br>
-        • Reduce prompt length
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col2:
-        st.markdown("""
-        <div class="info-box">
-        <strong>Increase Throughput</strong><br><br>
-        • Continuous batching (vLLM)<br>
-        • Add more GPUs (DP)<br>
-        • PagedAttention<br>
-        • Optimize batch sizes
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col3:
-        st.markdown("""
-        <div class="info-box">
-        <strong>Reduce Memory</strong><br><br>
-        • FP8/INT8 quantization<br>
-        • PagedAttention<br>
-        • Reduce context length<br>
-        • Lower batch size
-        </div>
-        """, unsafe_allow_html=True)
-
     st.markdown("---")
 
     # ========================================
@@ -462,6 +383,85 @@ if st.session_state.calculated:
             })
 
         st.dataframe(pd.DataFrame(gpu_configs), hide_index=True, use_container_width=True)
+
+    st.markdown("---")
+
+    # ========================================
+    # Performance Assessment
+    # ========================================
+    st.subheader("⚡ Performance Assessment")
+    st.info("**Note:** Performance metrics shown below are based on a single GPU deployment")
+
+    # Performance Metrics
+    st.markdown("**Current Performance vs Targets:**")
+
+    perf_summary = pd.DataFrame({
+        "Metric": [
+            "Time to First Token (TTFT)",
+            "Total Response Time",
+            "Tokens per Second",
+            "Max Concurrent Requests"
+        ],
+        "Actual": [
+            f"{ttft:.2f}s",
+            f"{total_latency:.2f}s",
+            f"{tokens_per_second:.1f}",
+            f"{max_concurrent_avg}"
+        ],
+        "Target": [
+            f"{ttft_target}s",
+            f"{latency_target}s",
+            f"{tps_target}",
+            f"{n_concurrent}"
+        ],
+        "Status": [
+            "✅" if ttft < ttft_target else "❌",
+            "✅" if total_latency < latency_target else "❌",
+            "✅" if tokens_per_second > tps_target else "❌",
+            "✅" if max_concurrent_avg >= n_concurrent else "❌"
+        ]
+    })
+
+    st.dataframe(perf_summary, hide_index=True, use_container_width=True)
+
+    # Optimization Strategies
+    st.markdown("---")
+    st.markdown("**Optimization Strategies:**")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("""
+        <div class="info-box">
+        <strong>Reduce Latency</strong><br><br>
+        • Higher compute GPUs<br>
+        • Enable FlashAttention<br>
+        • Speculative decoding<br>
+        • Reduce prompt length
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+        <div class="info-box">
+        <strong>Increase Throughput</strong><br><br>
+        • Continuous batching (vLLM)<br>
+        • Add more GPUs (DP)<br>
+        • PagedAttention<br>
+        • Optimize batch sizes
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown("""
+        <div class="info-box">
+        <strong>Reduce Memory</strong><br><br>
+        • FP8/INT8 quantization<br>
+        • PagedAttention<br>
+        • Reduce context length<br>
+        • Lower batch size
+        </div>
+        """, unsafe_allow_html=True)
 
     # ========================================
     # TECHNICAL DEEP DIVE SECTION
