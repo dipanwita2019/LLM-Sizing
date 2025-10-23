@@ -266,99 +266,17 @@ if st.session_state.calculated:
     gpus_needed = math.ceil(total_memory_gb / gpu["memory"])
 
     # ========================================
-    # NOW DISPLAY RESULTS - RECOMMENDATIONS FIRST
+    # NOW DISPLAY RESULTS - PERFORMANCE FIRST
     # ========================================
 
     st.header("📋 Recommendations & Summary")
     st.markdown("---")
 
     # ========================================
-    # GPU Requirements Summary
+    # Performance Assessment - TOP SECTION
     # ========================================
-    st.subheader("GPU Requirements")
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        st.metric("No. of GPUs Required", gpus_needed, help="Based on memory requirements")
-    with col2:
-        st.metric("Memory per GPU", f"{total_memory_gb / gpus_needed:.1f} GB" if gpus_needed > 0 else "N/A")
-    with col3:
-        st.metric("Total Memory Needed", f"{total_memory_gb:.1f} GB")
-    with col4:
-        st.metric("GPU Type", selected_gpu.split()[0])
-
-    st.markdown("---")
-
-    # ========================================
-    # Recommendations
-    # ========================================
-    st.subheader("💡 Deployment Recommendations")
-
-    if gpus_needed == 1 and available_memory > 0:
-        st.markdown(f"""
-        <div class="success-box">
-        <strong>✅ Single GPU Deployment</strong><br>
-        Your workload fits on a single {selected_gpu}!<br>
-        <br>
-        <strong>Configuration:</strong><br>
-        • Model: {selected_model}<br>
-        • Concurrent Requests: {max_concurrent_avg} (avg case)<br>
-        • Response Time: {total_latency:.2f}s<br>
-        • Tokens/Second: {tokens_per_second:.1f}<br>
-        </div>
-        """, unsafe_allow_html=True)
-
-    elif gpus_needed > 1:
-        st.markdown(f"""
-        <div class="warning-box">
-        <strong> Multi-GPU Setup Required</strong><br>
-        <br>
-        <strong>Minimum Configuration:</strong><br>
-        • GPUs Needed: <strong>{gpus_needed}x {selected_gpu}</strong><br>
-        • Memory per GPU: {total_memory_gb / gpus_needed:.1f} GB<br>
-        • Deployment Strategy: <strong>Tensor Parallelism (TP)</strong><br>
-        <br>
-        <strong>What is Tensor Parallelism?</strong><br>
-        Model weights are split across GPUs. Each GPU holds a portion of the model,
-        and they communicate during inference. Modern frameworks like vLLM and TensorRT-LLM
-        handle this automatically.
-        </div>
-        """, unsafe_allow_html=True)
-
-    else:
-        st.markdown(f"""
-        <div class="warning-box">
-        <strong>❌ Configuration Issue</strong><br>
-        Model weights ({model_weights_gb:.2f} GB) exceed single GPU capacity ({gpu['memory']} GB).<br>
-        Consider: Larger GPU or model quantization (FP8/INT8).
-        </div>
-        """, unsafe_allow_html=True)
-
-    # Capacity Warning
-    if max_concurrent_avg < n_concurrent and max_concurrent_avg > 0:
-        shortage = n_concurrent - max_concurrent_avg
-        additional_gpus = math.ceil(shortage / max_concurrent_avg)
-
-        st.markdown(f"""
-        <div class="warning-box">
-        <strong>⚠️ Throughput Warning</strong><br>
-        <br>
-        <strong>Your Target:</strong> {n_concurrent} concurrent requests<br>
-        <strong>Current Capacity:</strong> {max_concurrent_avg} concurrent requests<br>
-        <strong>Shortage:</strong> {shortage} requests<br>
-        <br>
-        <strong>Options:</strong><br>
-        1. Add {additional_gpus} more GPU(s) for Data Parallelism (DP)<br>
-        2. Reduce average context length to {int(avg_context_tokens * max_concurrent_avg / n_concurrent)} tokens<br>
-        3. Accept lower concurrency
-        </div>
-        """, unsafe_allow_html=True)
-
-    # ========================================
-    # Performance Assessment
-    # ========================================
-    st.markdown("---")
     st.subheader("⚡ Performance Assessment")
+    st.info("**Note:** Performance metrics shown below are based on a single GPU deployment")
 
     # Performance Metrics
     st.markdown("**Current Performance vs Targets:**")
@@ -428,6 +346,90 @@ if st.session_state.calculated:
         • PagedAttention<br>
         • Reduce context length<br>
         • Lower batch size
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    # ========================================
+    # GPU Requirements Summary
+    # ========================================
+    st.subheader("🖥️ GPU Requirements")
+
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("No. of GPUs Required", gpus_needed, help="Based on memory requirements")
+    with col2:
+        st.metric("Memory per GPU", f"{total_memory_gb / gpus_needed:.1f} GB" if gpus_needed > 0 else "N/A")
+    with col3:
+        st.metric("Total Memory Needed", f"{total_memory_gb:.1f} GB")
+    with col4:
+        st.metric("GPU Type", selected_gpu.split()[0])
+
+    st.markdown("---")
+
+    # ========================================
+    # Deployment Recommendations
+    # ========================================
+    st.subheader("💡 Deployment Recommendations")
+
+    if gpus_needed == 1 and available_memory > 0:
+        st.markdown(f"""
+        <div class="success-box">
+        <strong>✅ Single GPU Deployment</strong><br>
+        Your workload fits on a single {selected_gpu}!<br>
+        <br>
+        <strong>Configuration:</strong><br>
+        • Model: {selected_model}<br>
+        • Concurrent Requests: {max_concurrent_avg} (avg case)<br>
+        • Response Time: {total_latency:.2f}s<br>
+        • Tokens/Second: {tokens_per_second:.1f}<br>
+        </div>
+        """, unsafe_allow_html=True)
+
+    elif gpus_needed > 1:
+        st.markdown(f"""
+        <div class="warning-box">
+        <strong> Multi-GPU Setup Required</strong><br>
+        <br>
+        <strong>Minimum Configuration:</strong><br>
+        • GPUs Needed: <strong>{gpus_needed}x {selected_gpu}</strong><br>
+        • Memory per GPU: {total_memory_gb / gpus_needed:.1f} GB<br>
+        • Deployment Strategy: <strong>Tensor Parallelism (TP)</strong><br>
+        <br>
+        <strong>What is Tensor Parallelism?</strong><br>
+        Model weights are split across GPUs. Each GPU holds a portion of the model,
+        and they communicate during inference. Modern frameworks like vLLM and TensorRT-LLM
+        handle this automatically.
+        </div>
+        """, unsafe_allow_html=True)
+
+    else:
+        st.markdown(f"""
+        <div class="warning-box">
+        <strong>❌ Configuration Issue</strong><br>
+        Model weights ({model_weights_gb:.2f} GB) exceed single GPU capacity ({gpu['memory']} GB).<br>
+        Consider: Larger GPU or model quantization (FP8/INT8).
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Capacity Warning
+    if max_concurrent_avg < n_concurrent and max_concurrent_avg > 0:
+        shortage = n_concurrent - max_concurrent_avg
+        additional_gpus = math.ceil(shortage / max_concurrent_avg)
+
+        st.markdown(f"""
+        <div class="warning-box">
+        <strong>⚠️ Throughput Warning</strong><br>
+        <br>
+        <strong>Your Target:</strong> {n_concurrent} concurrent requests<br>
+        <strong>Current Capacity:</strong> {max_concurrent_avg} concurrent requests<br>
+        <strong>Shortage:</strong> {shortage} requests<br>
+        <br>
+        <strong>Options:</strong><br>
+        1. Add {additional_gpus} more GPU(s) for Data Parallelism (DP)<br>
+        2. Reduce average context length to {int(avg_context_tokens * max_concurrent_avg / n_concurrent)} tokens<br>
+        3. Accept lower concurrency
         </div>
         """, unsafe_allow_html=True)
 
