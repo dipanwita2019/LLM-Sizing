@@ -1,12 +1,55 @@
 import streamlit as st
+import pandas as pd
 import math
+import hashlib
 
-# Page config
-st.set_page_config(
-    page_title="GPU Sizing Tool",
-    page_icon="",
-    layout="centered"
-)
+# ===== PASSWORD PROTECTION =====
+def check_password():
+    """Returns True if the user had the correct password."""
+
+    def password_entered():
+        """Checks whether a password entered by the user is correct."""
+        # Replace this hash with your own generated hash
+        # Current hash is for password: "password"
+        correct_password_hash = "643435139fa71bb855e0e4375d5e77268fcffaa97f118300d349e746414f93e2"
+
+        entered_hash = hashlib.sha256(st.session_state["password"].encode()).hexdigest()
+
+        if entered_hash == correct_password_hash:
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+        else:
+            st.session_state["password_correct"] = False
+
+    # Return True if password is validated
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # Show login screen
+    st.markdown('<div class="main-header">', unsafe_allow_html=True)
+    st.title("🔒 LLM Sizer - Login")
+    st.markdown("**Enter password to access the tool**")
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    st.text_input(
+        "Password",
+        type="password",
+        on_change=password_entered,
+        key="password",
+        help="Contact admin if you don't have access"
+    )
+
+    if "password_correct" in st.session_state and not st.session_state["password_correct"]:
+        st.error("❌ Incorrect password. Please try again.")
+
+    return False
+
+
+# Check password before showing app
+if not check_password():
+    st.stop()
+# ===== END PASSWORD PROTECTION =====
+
 
 # Professional styling
 st.markdown("""
