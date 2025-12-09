@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 import math
 import hashlib
+from datetime import datetime
+
 
 # ===== PASSWORD PROTECTION =====
 def check_password():
@@ -207,6 +209,23 @@ st.markdown("""
         font-size: 0.9rem;
         font-style: italic;
     }
+
+    .platform-info-box {
+        background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1rem 0;
+        border: 2px solid #667eea;
+    }
+
+    .multi-node-warning {
+        background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        color: white;
+        padding: 1rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        font-weight: 600;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -241,11 +260,26 @@ model_options = {
     "Qwen2.5-72B": 72.0,
     "Llama 3.1 8B": 8.0,
     "Llama 3.1 70B": 70.0,
-    "Llama 3.1 405B": 405.0
+    "Llama 3.1 405B": 405.0,
+    "Custom": None  # Placeholder for custom input
 }
 
 model_name = st.selectbox("Select model", list(model_options.keys()), label_visibility="collapsed")
-params = model_options[model_name]
+
+# If Custom is selected, show input field
+if model_name == "Custom":
+    st.markdown("**Enter Custom Model Parameters (in billions)**")
+    params = st.number_input(
+        "Model size in billions of parameters (e.g., 13 for 13B model)",
+        min_value=0.1,
+        max_value=1000.0,
+        value=7.0,
+        step=0.5,
+        label_visibility="collapsed",
+        help="Enter the number of parameters in billions (B). For example: 7 for 7B, 13 for 13B, 70 for 70B"
+    )
+else:
+    params = model_options[model_name]
 
 st.markdown("")
 
@@ -312,6 +346,324 @@ def calculate_vram(params, precision, workload, batch_size=1, sequence_length=20
     }
 
 
+# ===== WORKSTATION DATA =====
+workstations = [
+    {
+        "name": "Z2 Mini G1i",
+        "max_gpus": 1,
+        "max_vram_per_gpu": 20,
+        "max_vram_total": 20,
+        "max_vram_config": "1x RTX 4000 SFF Ada 20GB",
+        "supported_gpus": [
+            "1x A400 4GB",
+            "1x A1000 8GB",
+            "1x RTX 2000 Ada 16GB",
+            "1x RTX 4000 SFF Ada 20GB"
+        ]
+    },
+    {
+        "name": "Z2 Tower G1i",
+        "max_gpus": 2,
+        "max_vram_per_gpu": 96,
+        "max_vram_total": 96,
+        "max_vram_config": "1x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB",
+        "supported_gpus": [
+            "2x A400 4GB",
+            "2x A1000 8GB",
+            "2x RTX 2000 Ada 16GB",
+            "2x RTX 4000 Ada 20GB",
+            "1x RTX 4500 Ada 24GB",
+            "1x RTX 5000 Ada 32GB",
+            "1x RTX 5880 Ada 48GB",
+            "1X NVIDIA RTX™ 6000 Ada 48GB",
+            "1X NVIDIA RTX PRO 4000 Blackwell 24GB",
+            "1X NVIDIA RTX PRO 4500 Blackwell 32GB",
+            "1x RTX PRO 5000 Blackwell 48GB",
+            "1x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB"
+        ]
+    },
+    {
+        "name": "Z4 G5",
+        "max_gpus": 2,
+        "max_vram_per_gpu": 96,
+        "max_vram_total": 192,
+        "max_vram_config": "2x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB",
+        "supported_gpus": [
+            "2x RTX A400 4GB",
+            "2x RTX A1000 8GB",
+            "2x RTX A4000 16GB",
+            "2x RTX A4500 20GB",
+            "2x RTX 2000 Ada 16GB",
+            "2x RTX 4000 Ada 20GB",
+            "2x RTX 4500 Ada 24GB",
+            "2x RTX 5000 Ada 32GB",
+            "2x RTX 5880 Ada 48GB",
+            "2x RTX 6000 Ada 48GB",
+            "2x RTX PRO 4000 Blackwell 24GB",
+            "2x RTX PRO 4500 Blackwell 32GB",
+            "2x RTX PRO 5000 Blackwell 48GB",
+            "2x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB"
+        ]
+    },
+    {
+        "name": "Z6 G5",
+        "max_gpus": 3,
+        "max_vram_per_gpu": 96,
+        "max_vram_total": 288,
+        "max_vram_config": "3x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB",
+        "supported_gpus": [
+            "3x RTX A400 4GB",
+            "2X NVIDIA® A800 40GB",
+            "3x RTX A1000 8GB",
+            "3x RTX A4000 16GB",
+            "3x RTX A4500 20GB",
+            "3x RTX 2000 Ada 16GB",
+            "3x RTX 4000 Ada 20GB",
+            "3x RTX 4500 Ada 24GB",
+            "3x RTX 5000 Ada 32GB",
+            "3x RTX 5880 Ada 48GB",
+            "3x RTX 6000 Ada 48GB",
+            "3x RTX PRO 4000 Blackwell 24GB",
+            "3x RTX PRO 4500 Blackwell 32GB",
+            "3x RTX PRO 5000 Blackwell 48GB",
+            "3x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB"
+        ]
+    },
+    {
+        "name": "Z8 G5",
+        "max_gpus": 2,
+        "max_vram_per_gpu": 96,
+        "max_vram_total": 192,
+        "max_vram_config": "2x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB",
+        "supported_gpus": [
+            "2x RTX A400 4GB",
+            "2x RTX A1000 8GB",
+            "2x RTX A4000 16GB",
+            "2x RTX A4500 20GB",
+            "2x RTX 2000 Ada 16GB",
+            "2x RTX 4000 Ada 20GB",
+            "2x RTX 4500 Ada 24GB",
+            "2x RTX 5000 Ada 32GB",
+            "2x RTX 5880 Ada 48GB",
+            "2x RTX 6000 Ada 48GB",
+            "2x RTX PRO 4000 Blackwell 24GB",
+            "2x RTX PRO 4500 Blackwell 32GB",
+            "2x RTX PRO 5000 Blackwell 48GB",
+            "2x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB"
+        ]
+    },
+    {
+        "name": "Z8 Fury G5",
+        "max_gpus": 4,
+        "max_vram_per_gpu": 96,
+        "max_vram_total": 384,
+        "max_vram_config": "4x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB",
+        "supported_gpus": [
+            "3X NVIDIA® A800 40GB",
+            "4x RTX A400 4GB",
+            "4x RTX A1000 8GB",
+            "4x RTX A4000 16GB",
+            "4x RTX A4500 20GB",
+            "4x RTX 2000 Ada 16GB",
+            "4x RTX 4000 Ada 20GB",
+            "4x RTX 4500 Ada 24GB",
+            "4x RTX 5000 Ada 32GB",
+            "4x RTX 5880 Ada 48GB",
+            "4x RTX 6000 Ada 48GB",
+            "4x RTX PRO 4000 Blackwell 24GB",
+            "4x RTX PRO 4500 Blackwell 32GB",
+            "4x RTX PRO 5000 Blackwell 48GB",
+            "4x NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB"
+        ]
+    }
+]
+
+
+def recommend_workstation_smart(vram_required):
+    """
+    Smart workstation recommendation with TP=2/4 preference
+    Avoids TP=3, suggests multi-node for very large models
+    """
+
+    # Single GPU workloads (TP=1)
+    if vram_required <= 20:
+        return {
+            "platform": "Z2 Mini G1i",
+            "config": "1x GPU (up to 20GB)",
+            "tp": 1,
+            "nodes": 1,
+            "total_gpus": 1,
+            "reasoning": "Fits in single small GPU",
+            "workstation": workstations[0]
+        }
+
+    if vram_required <= 96:
+        return {
+            "platform": "Z2 Tower G1i",
+            "config": "1x RTX PRO 6000 Blackwell Max-Q (96GB)",
+            "tp": 1,
+            "nodes": 1,
+            "total_gpus": 1,
+            "reasoning": "Fits in single high-end GPU",
+            "workstation": workstations[1]
+        }
+
+    # TP=2 workloads (2 GPUs)
+    if vram_required <= 192:
+        return {
+            "platform": "Z4 G5 or Z8 G5",
+            "config": "2x RTX PRO 6000 Blackwell Max-Q (96GB each) = 192GB total",
+            "tp": 2,
+            "nodes": 1,
+            "total_gpus": 2,
+            "reasoning": "Model distributed across 2 GPUs using Tensor Parallelism (TP=2)",
+            "workstation": workstations[2]  # Z4 G5
+        }
+
+    # TP=4 workloads (4 GPUs) - SKIP Z6 G5 (TP=3)
+    if vram_required <= 384:
+        return {
+            "platform": "Z8 Fury G5",
+            "config": "4x RTX PRO 6000 Blackwell Max-Q (96GB each) = 384GB total",
+            "tp": 4,
+            "nodes": 1,
+            "total_gpus": 4,
+            "reasoning": "Model distributed across 4 GPUs using Tensor Parallelism (TP=4). Z6 G5 skipped (TP=3 is inefficient)",
+            "workstation": workstations[5]  # Z8 Fury G5
+        }
+
+    # Multi-node: TP=8 (2 workstations × 4 GPUs)
+    if vram_required <= 768:
+        return {
+            "platform": "2x Z8 Fury G5",
+            "config": "2 platforms × 4 GPUs × 96GB = 768GB total",
+            "tp": 8,
+            "nodes": 2,
+            "total_gpus": 8,
+            "reasoning": "Multi-platform setup with model distributed across 8 GPUs (TP=8)",
+            "workstation": workstations[5],  # Z8 Fury G5
+            "multi_node": True
+        }
+
+    # Multi-node: TP=16 (4 workstations × 4 GPUs)
+    if vram_required <= 1536:
+        return {
+            "platform": "4x Z8 Fury G5",
+            "config": "4 platforms × 4 GPUs × 96GB = 1,536GB total",
+            "tp": 16,
+            "nodes": 4,
+            "total_gpus": 16,
+            "reasoning": "Large multi-platform cluster with model distributed across 16 GPUs (TP=16)",
+            "workstation": workstations[5],  # Z8 Fury G5
+            "multi_node": True
+        }
+
+    # Beyond workstation scale
+    return {
+        "platform": "GPU Cluster / Cloud Infrastructure",
+        "config": f"Requires {math.ceil(vram_required / 96)} GPUs minimum (96GB each)",
+        "tp": "Custom",
+        "nodes": "> 4",
+        "total_gpus": math.ceil(vram_required / 96),
+        "reasoning": "Model exceeds workstation capacity, requires GPU cluster",
+        "workstation": None,
+        "multi_node": True
+    }
+
+
+def gpu_count_options(ws):
+    """Return the specific GPU count options for each platform"""
+    name = ws["name"]
+    if name == "Z2 Mini G1i":
+        return "1 GPU"
+    if name == "Z2 Tower G1i":
+        return "1, 2 GPUs"
+    if name == "Z4 G5":
+        return "2 GPUs"
+    if name == "Z6 G5":
+        return "2, 3 GPUs"
+    if name == "Z8 G5":
+        return "1, 2 GPUs"
+    if name == "Z8 Fury G5":
+        return "3, 4 GPUs"
+    return f"{ws['max_gpus']} GPUs"
+
+
+def generate_report(model_name, params, precision, workload, batch_size, sequence_length, vram, recommendation):
+    """Generate a downloadable text report"""
+    report = f"""
+╔══════════════════════════════════════════════════════════════╗
+║            GPU SIZING RECOMMENDATION REPORT                   ║
+╚══════════════════════════════════════════════════════════════╝
+
+Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+─────────────────────────────────────────────────────────────
+MODEL CONFIGURATION
+─────────────────────────────────────────────────────────────
+Model:              {model_name}
+Parameters:         {params}B
+Precision:          {precision}
+Workload Type:      {workload}
+Batch Size:         {batch_size}
+Sequence Length:    {sequence_length} tokens
+
+─────────────────────────────────────────────────────────────
+VRAM REQUIREMENTS
+─────────────────────────────────────────────────────────────
+Model Weights:      {vram['model_weights']:.2f} GB
+KV Cache:           {vram['kv_cache']:.2f} GB
+Activations:        {vram['activations']:.2f} GB
+Overhead (20%):     {(vram['total'] - (vram['model_weights'] + vram['kv_cache'] + vram['activations'])):.2f} GB
+───────────────────────────────────
+TOTAL VRAM:         {vram['total']:.2f} GB
+
+─────────────────────────────────────────────────────────────
+RECOMMENDED WORKSTATION
+─────────────────────────────────────────────────────────────
+Platform:           {recommendation['platform']}
+Configuration:      {recommendation['config']}
+"""
+
+    if recommendation.get('workstation'):
+        ws = recommendation['workstation']
+        report += f"""
+Platform Specs:
+  • GPUs Supported:  {gpu_count_options(ws)}
+  • Max VRAM:        {ws['max_vram_total']} GB ({ws['max_vram_config']})
+
+Supported GPU Options:
+"""
+        for gpu in ws['supported_gpus']:
+            report += f"  • {gpu}\n"
+
+    report += f"""
+─────────────────────────────────────────────────────────────
+RECOMMENDATION REASONING
+─────────────────────────────────────────────────────────────
+{recommendation['reasoning']}
+
+─────────────────────────────────────────────────────────────
+SYSTEM REQUIREMENTS
+─────────────────────────────────────────────────────────────
+Recommended RAM:    {max(8, math.ceil(vram['total'] * 2))} GB minimum
+                    (2× VRAM for optimal performance)
+
+─────────────────────────────────────────────────────────────
+NOTES
+─────────────────────────────────────────────────────────────
+- This sizing is based on ApXML VRAM calculation methodology
+- Actual requirements may vary based on framework and optimization
+- For multi-platform setups, consultation is recommended
+- Contact your HP representative for detailed configuration
+
+╔══════════════════════════════════════════════════════════════╗
+║  HP Z Workstations - GPU Sizing Tool                         ║
+╚══════════════════════════════════════════════════════════════╝
+"""
+    return report
+
+
 # Calculate button
 if st.button("Calculate Requirements"):
     vram = calculate_vram(params, precision, workload, batch_size, sequence_length)
@@ -342,17 +694,79 @@ if st.button("Calculate Requirements"):
 
     st.markdown("---")
 
+    # ===== WORKSTATION RECOMMENDATION =====
+    recommendation = recommend_workstation_smart(vram['total'])
+
+    st.markdown("## 🖥️ Recommended Workstation")
+
+    # Multi-node warning if applicable
+    if recommendation.get("multi_node", False):
+        # Get platform name from recommendation
+        platform_name = recommendation['platform'].split('x')[1].strip() if 'x' in recommendation['platform'] else \
+        recommendation['platform']
+
+        st.markdown(f"""
+        <div class='multi-node-warning'>
+            ⚠️ <strong>Multi-Platform Setup Likely Required</strong><br>
+            Likely need {platform_name} cluster.<br>
+            Estimated configuration: {recommendation['nodes']} {platform_name} with approximately {recommendation['total_gpus']} NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB GPUs.<br>
+            <em>Further consultation recommended to optimize configuration.</em>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.success(f"**{recommendation['platform']}**")
+
+    # Show workstation specs if available
+    if recommendation.get("workstation"):
+        ws = recommendation["workstation"]
+
+        # Determine platform name for display
+        if recommendation.get("multi_node", False):
+            platform_display = f"{ws['name']} "
+        else:
+            platform_display = ws['name']
+
+
+        st.markdown(f"""
+        <div class='platform-info-box'>
+            <p><strong>Platform Specifications:</strong></p>
+            <p>• <strong>No. of GPUs Supported:</strong> {gpu_count_options(ws)}</p>
+            <p>• <strong>Max Total VRAM per {platform_display}:</strong> {ws['max_vram_total']} GB ({ws['max_vram_config']})</p>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Supported GPUs
+    with st.expander("🎮 View Supported GPUs"):
+        st.markdown("**Compatible GPU Options:**")
+        for gpu in ws['supported_gpus']:
+            st.markdown(f"• {gpu}")
+
+    st.markdown("---")
+
     # System Requirements
-    st.markdown("## System Requirements")
-    ram_needed = math.ceil(vram['total'] * 2)
+    st.markdown("## 💻 System RAM Requirements")
+    ram_needed = max(8, math.ceil(vram['total'] * 2))  # Minimum 8 GB
     st.markdown(f"""
     **Recommended System RAM:** {ram_needed} GB minimum
 
     *General rule: 2× VRAM for optimal performance*
     """)
 
-# Footer
-st.markdown("---")
-st.caption("Calculations based on ApXML VRAM methodology")
-st.caption(
-    f"Current settings: Batch size = {batch_size if 'batch_size' in locals() else 1}, Sequence length = {sequence_length if 'sequence_length' in locals() else 2048}")
+
+    # Download Report
+    st.markdown("## 📥 Export Report")
+    report_content = generate_report(model_name, params, precision, workload, batch_size, sequence_length, vram,
+                                     recommendation)
+
+    st.download_button(
+        label="📄 Download Sizing Report (TXT)",
+        data=report_content,
+        file_name=f"gpu_sizing_report_{model_name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt",
+        mime="text/plain",
+        help="Download a detailed text report of this GPU sizing recommendation"
+    )
+    # Footer
+    st.markdown("---")
+    st.caption("Calculations based on ApXML VRAM methodology | Platform recommendations for HP Z Workstations")
+    st.caption(
+        f"Current settings: Batch size = {batch_size if 'batch_size' in locals() else 1}, Sequence length = {sequence_length if 'sequence_length' in locals() else 2048}")
