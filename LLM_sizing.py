@@ -53,6 +53,8 @@ if not check_password():
 # Initialize session state
 if 'calculated' not in st.session_state:
     st.session_state.calculated = False
+if 'theme' not in st.session_state:
+    st.session_state.theme = 'Light'
 
 # Page configuration
 st.set_page_config(
@@ -62,52 +64,131 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS
-st.markdown("""
-<style>
-    .main-header {
-        padding: 1rem 0;
-        margin-bottom: 1.5rem;
-        border-bottom: 2px solid #f0f2f6;
-    }
-    .metric-card {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 0.5rem 0;
-        border-left: 4px solid #0066cc;
-    }
-    .formula-box {
-        background-color: #f8f9fa;
-        padding: 1rem;
-        border-radius: 8px;
-        font-family: monospace;
-        font-size: 0.9em;
-        margin: 1rem 0;
-    }
-    .info-box {
-        background-color: #e8f4f8;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        border-left: 4px solid #17a2b8;
-    }
-    .warning-box {
-        background-color: #fff3cd;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        border-left: 4px solid #ffc107;
-    }
-    .success-box {
-        background-color: #d4edda;
-        padding: 1rem;
-        border-radius: 8px;
-        margin: 1rem 0;
-        border-left: 4px solid #28a745;
-    }
-</style>
-""", unsafe_allow_html=True)
+# Theme-based CSS
+def get_theme_css(theme):
+    """Returns CSS based on selected theme"""
+    if theme == 'Dark':
+        return """
+        <style>
+            /* Dark Theme */
+            .main-header {
+                padding: 1rem 0;
+                margin-bottom: 1.5rem;
+                border-bottom: 2px solid #444;
+                color: #e0e0e0;
+            }
+            .metric-card {
+                background-color: #2d2d2d;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                border-left: 4px solid #4a9eff;
+                color: #e0e0e0;
+            }
+            .formula-box {
+                background-color: #2d2d2d;
+                padding: 1rem;
+                border-radius: 8px;
+                font-family: monospace;
+                font-size: 0.9em;
+                margin: 1rem 0;
+                color: #e0e0e0;
+                border: 1px solid #444;
+            }
+            .info-box {
+                background-color: #1e3a5f;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #4a9eff;
+                color: #e0e0e0;
+            }
+            .warning-box {
+                background-color: #4a3800;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #ffb300;
+                color: #ffd54f;
+            }
+            .success-box {
+                background-color: #1e4620;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #66bb6a;
+                color: #a5d6a7;
+            }
+            /* Override Streamlit's default backgrounds */
+            [data-testid="stAppViewContainer"] {
+                background-color: #1a1a1a;
+            }
+            [data-testid="stSidebar"] {
+                background-color: #262626;
+            }
+            [data-testid="stMarkdownContainer"] {
+                color: #e0e0e0;
+            }
+            /* Tables */
+            .dataframe {
+                color: #e0e0e0 !important;
+            }
+            /* Headers */
+            h1, h2, h3, h4, h5, h6 {
+                color: #e0e0e0 !important;
+            }
+        </style>
+        """
+    else:  # Light theme
+        return """
+        <style>
+            /* Light Theme */
+            .main-header {
+                padding: 1rem 0;
+                margin-bottom: 1.5rem;
+                border-bottom: 2px solid #f0f2f6;
+            }
+            .metric-card {
+                background-color: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 0.5rem 0;
+                border-left: 4px solid #0066cc;
+            }
+            .formula-box {
+                background-color: #f8f9fa;
+                padding: 1rem;
+                border-radius: 8px;
+                font-family: monospace;
+                font-size: 0.9em;
+                margin: 1rem 0;
+            }
+            .info-box {
+                background-color: #e8f4f8;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #17a2b8;
+            }
+            .warning-box {
+                background-color: #fff3cd;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #ffc107;
+            }
+            .success-box {
+                background-color: #d4edda;
+                padding: 1rem;
+                border-radius: 8px;
+                margin: 1rem 0;
+                border-left: 4px solid #28a745;
+            }
+        </style>
+        """
+
+# Apply theme CSS
+st.markdown(get_theme_css(st.session_state.theme), unsafe_allow_html=True)
 
 # App Title
 st.markdown('<div class="main-header">', unsafe_allow_html=True)
@@ -117,6 +198,27 @@ st.markdown('</div>', unsafe_allow_html=True)
 
 # Sidebar Inputs
 st.sidebar.header("Configuration")
+
+# Theme Toggle
+st.sidebar.markdown("---")
+theme_col1, theme_col2 = st.sidebar.columns([1, 2])
+with theme_col1:
+    st.markdown("**Theme:**")
+with theme_col2:
+    theme_option = st.selectbox(
+        "Select Theme",
+        options=["Light", "Dark"],
+        index=0 if st.session_state.theme == "Light" else 1,
+        key="theme_selector",
+        label_visibility="collapsed"
+    )
+
+# Update theme if changed
+if theme_option != st.session_state.theme:
+    st.session_state.theme = theme_option
+    st.rerun()
+
+st.sidebar.markdown("---")
 
 # Model Selection
 st.sidebar.subheader("1. Model Selection")
