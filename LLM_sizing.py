@@ -52,7 +52,6 @@ if not check_password():
     st.stop()
 # ===== END PASSWORD PROTECTION =====
 
-
 # Professional styling
 st.markdown("""
     <style>
@@ -229,6 +228,17 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+# Hide Streamlit menu and footer
+hide_streamlit_style = """
+    <style>
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    .stDeployButton {display:none;}
+    </style>
+    """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 # Header
 st.title("⚡ GPU Sizing Tool")
 st.markdown(
@@ -248,39 +258,205 @@ workload = st.radio(
 
 st.markdown("")
 
-# Question 2: Model Size
-st.markdown("### 2. Model Size")
-model_options = {
-    "Qwen2.5-0.5B": 0.5,
-    "Qwen2.5-1.5B": 1.5,
-    "Qwen2.5-3B": 3.0,
-    "Qwen2.5-7B": 7.0,
-    "Qwen2.5-14B": 14.0,
-    "Qwen2.5-32B": 32.0,
-    "Qwen2.5-72B": 72.0,
-    "Llama 3.1 8B": 8.0,
-    "Llama 3.1 70B": 70.0,
-    "Llama 3.1 405B": 405.0,
-    "Custom": None  # Placeholder for custom input
-}
+# Question 2: Model Selection (Open Source Models - 2026 Updated)
+st.markdown("### 2. Model Selection")
 
-model_name = st.selectbox("Select model", list(model_options.keys()), label_visibility="collapsed")
+col1, col2, col3 = st.columns(3)
 
-# If Custom is selected, show input field
-if model_name == "Custom":
-    st.markdown("**Enter Custom Model Parameters (in billions)**")
-    params = st.number_input(
-        "Model size in billions of parameters (e.g., 13 for 13B model)",
-        min_value=0.1,
-        max_value=1000.0,
-        value=7.0,
-        step=0.5,
-        label_visibility="collapsed",
-        help="Enter the number of parameters in billions (B). For example: 7 for 7B, 13 for 13B, 70 for 70B"
+with col1:
+    st.markdown("**Model Family**")
+    model_family = st.selectbox(
+        "Select model family",
+        [
+            "Llama (Meta)",
+            "DeepSeek",
+            "Qwen (Alibaba)",
+            "Mistral AI",
+            "GPT-OSS (OpenAI)",
+            "Phi (Microsoft)",
+            "Gemma (Google)",
+            "MiMo (Xiaomi)",
+            "Granite (IBM)",
+            "Falcon (TII)",
+            "Custom"
+        ],
+        index=0,  # Llama is default
+        key="model_family",
+        label_visibility="collapsed"
     )
-else:
-    params = model_options[model_name]
 
+with col2:
+    st.markdown("**Version**")
+    if "Llama" in model_family:
+        version_options = ["3.1", "4 Behemoth (Preview)", "4 Maverick", "4 Scout", "3.3", "3.0", "2"]
+    elif "DeepSeek" in model_family:
+        version_options = ["V3.2", "R1 (Reasoning)", "V3", "V2.5", "Coder-V2"]
+    elif "Qwen" in model_family:
+        version_options = ["3-Max", "2.5", "2.5-Coder", "QwQ (Reasoning)"]
+    elif "Mistral" in model_family:
+        version_options = ["Large 2", "Mixtral 8x22B", "Mixtral 8x7B", "Small 2409", "7B v0.3"]
+    elif "GPT-OSS" in model_family:
+        version_options = ["120B", "20B"]
+    elif "Phi" in model_family:
+        version_options = ["4", "4-mini-flash", "3.5", "3 Medium", "3 Mini"]
+    elif "Gemma" in model_family:
+        version_options = ["2 (27B)", "2 (9B)", "2 (2B)"]
+    elif "MiMo" in model_family:
+        version_options = ["V2-Flash"]
+    elif "Granite" in model_family:
+        version_options = ["4.0-H-Small", "4.0-H-Tiny", "4.0-H-Micro", "3.2", "3.1", "3.0", "8B", "2B"]
+    elif "Falcon" in model_family:
+        version_options = ["3 (10B)", "3 (7B)", "3 (3B)", "3 (1B)", "2 11B", "Mamba 7B", "180B", "40B"]
+    else:
+        version_options = ["Custom"]
+
+    version = st.selectbox(
+        "Select version",
+        version_options,
+        key="version",
+        label_visibility="collapsed"
+    )
+
+with col3:
+    st.markdown("**Parameters (B)**")
+
+    if "Llama" in model_family:
+        if "4 Behemoth" in version:
+            param_options = ["~2000 [288 active]"]
+        elif "4 Maverick" in version:
+            param_options = ["400 [17 active]"]
+        elif "4 Scout" in version:
+            param_options = ["109 [17 active]"]
+        elif version == "3.3":
+            param_options = ["70"]
+        elif version == "3.1":
+            param_options = ["8", "70", "405"]
+        elif version == "3.0":
+            param_options = ["8", "70"]
+        else:
+            param_options = ["7", "13", "70"]
+    elif "DeepSeek" in model_family:
+        if "V3.2" in version:
+            param_options = ["685 [37 active]"]
+        elif "R1" in version:
+            param_options = ["671 [37 active]"]
+        elif "V3" in version:
+            param_options = ["671"]
+        elif "V2.5" in version:
+            param_options = ["236"]
+        elif "Coder" in version:
+            param_options = ["16", "236"]
+        else:
+            param_options = ["671"]
+    elif "Qwen" in model_family:
+        if "3-Max" in version:
+            param_options = ["235 [22 active]"]
+        elif "Coder" in version:
+            param_options = ["32"]
+        elif "QwQ" in version:
+            param_options = ["32"]
+        else:
+            param_options = ["0.5", "1.5", "3", "7", "14", "32", "72"]
+    elif "Mistral" in model_family:
+        if "Large" in version:
+            param_options = ["123"]
+        elif "8x22B" in version:
+            param_options = ["141 [39 active]"]
+        elif "8x7B" in version:
+            param_options = ["47 [13 active]"]
+        elif "Small" in version:
+            param_options = ["22"]
+        else:
+            param_options = ["7"]
+    elif "GPT-OSS" in model_family:
+        if "120B" in version:
+            param_options = ["117 [5.1 active]"]
+        else:
+            param_options = ["20"]
+    elif "Phi" in model_family:
+        if version == "4":
+            param_options = ["14.7"]
+        elif "mini-flash" in version:
+            param_options = ["3.8"]
+        elif version == "3.5":
+            param_options = ["3.8"]
+        elif "Medium" in version:
+            param_options = ["14"]
+        else:
+            param_options = ["3.8"]
+    elif "Gemma" in model_family:
+        if "27B" in version:
+            param_options = ["27"]
+        elif "9B" in version:
+            param_options = ["9"]
+        else:
+            param_options = ["2"]
+    elif "MiMo" in model_family:
+        param_options = ["309 [15 active]"]
+    elif "Granite" in model_family:
+        if "4.0-H-Small" in version:
+            param_options = ["32 [9 active]"]
+        elif "4.0-H-Tiny" in version:
+            param_options = ["7 [1 active]"]
+        elif "4.0-H-Micro" in version:
+            param_options = ["3"]
+        elif version == "8B":
+            param_options = ["8"]
+        elif version == "2B":
+            param_options = ["2"]
+        else:
+            param_options = ["8"]
+    elif "Falcon" in model_family:
+        if "180B" in version:
+            param_options = ["180"]
+        elif "40B" in version:
+            param_options = ["40"]
+        elif "2 11B" in version:
+            param_options = ["11"]
+        elif "Mamba" in version:
+            param_options = ["7"]
+        elif "(10B)" in version:
+            param_options = ["10"]
+        elif "(7B)" in version:
+            param_options = ["7"]
+        elif "(3B)" in version:
+            param_options = ["3"]
+        elif "(1B)" in version:
+            param_options = ["1"]
+        else:
+            param_options = ["40"]
+    else:
+        params = st.number_input(
+            "Enter parameters (B)",
+            min_value=0.1,
+            max_value=2000.0,
+            value=7.0,
+            step=0.5,
+            key="params_custom",
+            label_visibility="collapsed"
+        )
+        param_options = None
+
+    if param_options:
+        params_str = st.selectbox(
+            "Select parameters",
+            param_options,
+            key="params",
+            label_visibility="collapsed"
+        )
+        params_clean = params_str.replace("~", "").split(" ")[0]
+        params = float(params_clean)
+
+if model_family != "Custom":
+    family_clean = model_family.split(" (")[0]
+    if "[" in params_str and "active" in params_str:
+        model_name = f"{family_clean} {version} {params_str}"
+    else:
+        model_name = f"{family_clean} {version} {params}B"
+else:
+    model_name = f"Custom {version} {params}B"
+
+st.caption(f"✅ Selected: **{model_name}**")
 st.markdown("")
 
 # Question 3: Precision
@@ -589,77 +765,198 @@ def gpu_count_options(ws):
     return f"{ws['max_gpus']} GPUs"
 
 
-def generate_report(model_name, params, precision, workload, batch_size, sequence_length, vram, recommendation):
-    """Generate a downloadable text report"""
+def generate_report(model_name, params, precision, workload, batch_size, sequence_length, vram,
+                   min_rec, min_vram, min_headroom_gb, min_headroom_pct,
+                   fp_rec=None, fp_vram=None, fp_headroom_gb=None, fp_headroom_pct=None,
+                   target_headroom=30):
+    """Generate a sales-friendly downloadable text report"""
+
     report = f"""
-╔══════════════════════════════════════════════════════════════╗
-║            GPU SIZING RECOMMENDATION REPORT                   ║
-╚══════════════════════════════════════════════════════════════╝
+╔═══════════════════════════════════════════════════════════════════╗
+║          HP Z WORKSTATION GPU SIZING RECOMMENDATION               ║
+╚═══════════════════════════════════════════════════════════════════╝
 
-Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+Generated: {datetime.now().strftime('%B %d, %Y at %I:%M %p')}
 
-─────────────────────────────────────────────────────────────
-MODEL CONFIGURATION
-─────────────────────────────────────────────────────────────
-Model:              {model_name}
-Parameters:         {params}B
+═══════════════════════════════════════════════════════════════════
+CUSTOMER REQUIREMENTS
+═══════════════════════════════════════════════════════════════════
+
+AI Model:           {model_name}
+Model Size:         {params} Billion Parameters
 Precision:          {precision}
-Workload Type:      {workload}
+Use Case:           {workload}
 Batch Size:         {batch_size}
-Sequence Length:    {sequence_length} tokens
+Context Length:     {sequence_length} tokens
 
-─────────────────────────────────────────────────────────────
-VRAM REQUIREMENTS
-─────────────────────────────────────────────────────────────
-Model Weights:      {vram['model_weights']:.2f} GB
-KV Cache:           {vram['kv_cache']:.2f} GB
-Activations:        {vram['activations']:.2f} GB
-Overhead (20%):     {(vram['total'] - (vram['model_weights'] + vram['kv_cache'] + vram['activations'])):.2f} GB
-───────────────────────────────────
-TOTAL VRAM:         {vram['total']:.2f} GB
+═══════════════════════════════════════════════════════════════════
+VRAM CALCULATION (ApXML Methodology)
+═══════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────────────────
-RECOMMENDED WORKSTATION
-─────────────────────────────────────────────────────────────
-Platform:           {recommendation['platform']}
-Configuration:      {recommendation['config']}
+How we calculated VRAM requirements:
+
+1. Model Weights:       {vram['model_weights']:.1f} GB
+   └─ Storage for model parameters at {precision} precision
+
+2. KV Cache:            {vram['kv_cache']:.1f} GB
+   └─ Memory for attention mechanism (scales with context length)
+
+3. Activation Memory:   {vram['activations']:.1f} GB
+   └─ Temporary computation memory (varies by workload type)
+
+4. System Overhead:     {(vram['total'] - (vram['model_weights'] + vram['kv_cache'] + vram['activations'])):.1f} GB
+   └─ 20% buffer for framework and system operations
+
+───────────────────────────────────────────────────────
+TOTAL VRAM REQUIRED:    {vram['total']:.1f} GB
+───────────────────────────────────────────────────────
+
+═══════════════════════════════════════════════════════════════════
+PLATFORM RECOMMENDATIONS
+═══════════════════════════════════════════════════════════════════
+
 """
 
-    if recommendation.get('workstation'):
-        ws = recommendation['workstation']
+    # Good Fit (Minimum)
+    report += f"""
+┌─────────────────────────────────────────────────────────────────┐
+│ ✅ GOOD FIT - {min_rec['platform']}
+└─────────────────────────────────────────────────────────────────┘
+
+Configuration:      {min_rec['config']}
+Total VRAM:         {min_vram:.0f} GB
+Available Headroom: +{min_headroom_gb:.1f} GB ({min_headroom_pct:.0f}%)
+
+"""
+
+    if min_rec.get('workstation'):
+        ws = min_rec['workstation']
+        report += f"""GPU Configuration Options:
+"""
+        for i, gpu in enumerate(ws['supported_gpus'][:6], 1):  # Show first 6 options
+            report += f"  {i}. {gpu}\n"
+        if len(ws['supported_gpus']) > 6:
+            report += f"  ... and {len(ws['supported_gpus']) - 6} more options\n"
+
+    if min_headroom_pct < target_headroom:
         report += f"""
-Platform Specs:
-  • GPUs Supported:  {gpu_count_options(ws)}
-  • Max VRAM:        {ws['max_vram_total']} GB ({ws['max_vram_config']})
-
-Supported GPU Options:
+⚠️  NOTE: This configuration provides {min_headroom_pct:.0f}% headroom.
+    {workload} workloads typically need {target_headroom}% for optimal performance.
+    Consider the "Better Choice" option below for future growth.
 """
-        for gpu in ws['supported_gpus']:
-            report += f"  • {gpu}\n"
+
+    # Better Choice (Future-proof) - if provided
+    if fp_rec and fp_vram:
+        report += f"""
+
+┌─────────────────────────────────────────────────────────────────┐
+│ 🚀 BETTER CHOICE - {fp_rec['platform']}
+└─────────────────────────────────────────────────────────────────┘
+
+Configuration:      {fp_rec['config']}
+Total VRAM:         {fp_vram:.0f} GB
+Available Headroom: +{fp_headroom_gb:.1f} GB ({fp_headroom_pct:.0f}%)
+
+✓ Meets {target_headroom}% headroom target for {workload} workloads
+✓ Future-proof for 18-30 months
+✓ Handles growing workloads and model upgrades
+
+"""
+        if fp_rec.get('workstation'):
+            fp_ws = fp_rec['workstation']
+            report += f"""GPU Configuration Options:
+"""
+            for i, gpu in enumerate(fp_ws['supported_gpus'][:6], 1):
+                report += f"  {i}. {gpu}\n"
+            if len(fp_ws['supported_gpus']) > 6:
+                report += f"  ... and {len(fp_ws['supported_gpus']) - 6} more options\n"
 
     report += f"""
-─────────────────────────────────────────────────────────────
-RECOMMENDATION REASONING
-─────────────────────────────────────────────────────────────
-{recommendation['reasoning']}
+═══════════════════════════════════════════════════════════════════
+WHY HEADROOM MATTERS FOR {workload.upper()}
+═══════════════════════════════════════════════════════════════════
+"""
 
-─────────────────────────────────────────────────────────────
+    if workload == "Inference":
+        report += """
+Recommended: 30% headroom provides:
+  • Handle 2-4× batch size increases as usage grows
+  • Accommodate longer context windows (2K → 8K+ tokens)
+  • Upgrade to next-generation models without hardware changes
+  • Serve multiple models simultaneously
+"""
+    elif workload == "Fine-Tuning":
+        report += """
+Recommended: 30% headroom provides:
+  • Upgrade from LoRA to full fine-tuning methods
+  • Experiment with larger base models as they're released
+  • Run multiple fine-tuning experiments in parallel
+  • Handle larger training datasets
+"""
+    else:  # Training
+        report += """
+Recommended: 50% headroom provides:
+  • Train models 2-3× larger without infrastructure upgrade
+  • Experiment with distributed training techniques (TP, PP, DP)
+  • Build multi-stage pipelines (pre-training + fine-tuning)
+  • Accommodate gradient accumulation and larger batch sizes
+"""
+
+    report += f"""
+═══════════════════════════════════════════════════════════════════
 SYSTEM REQUIREMENTS
-─────────────────────────────────────────────────────────────
-Recommended RAM:    {max(8, math.ceil(vram['total'] * 2))} GB minimum
-                    (2× VRAM for optimal performance)
+═══════════════════════════════════════════════════════════════════
 
-─────────────────────────────────────────────────────────────
-NOTES
-─────────────────────────────────────────────────────────────
-- This sizing is based on ApXML VRAM calculation methodology
-- Actual requirements may vary based on framework and optimization
-- For multi-platform setups, consultation is recommended
-- Contact your HP representative for detailed configuration
+System RAM:         {max(16, math.ceil(vram['total'] * 2))} GB minimum
+                    (Recommended: 2× VRAM for optimal performance)
 
-╔══════════════════════════════════════════════════════════════╗
-║  HP Z Workstations - GPU Sizing Tool                         ║
-╚══════════════════════════════════════════════════════════════╝
+Storage:            High-speed NVMe SSD recommended
+                    - Model storage: ~{vram['model_weights'] * 2:.0f} GB
+                    - Dataset storage: Project-dependent
+
+Network:            10GbE or faster for multi-node setups
+                    1GbE sufficient for single workstation
+
+═══════════════════════════════════════════════════════════════════
+TECHNICAL NOTES
+═══════════════════════════════════════════════════════════════════
+
+Calculation Method:
+  • Based on ApXML VRAM estimation methodology
+  • Accounts for model weights, KV cache, activations, and overhead
+  • Validated against real-world LLM deployments
+
+Tensor Parallelism (TP):
+  • TP=1: Single GPU (≤96GB models)
+  • TP=2: 2 GPUs working together (96-192GB models)
+  • TP=4: 4 GPUs working together (192-384GB models)
+  • TP=8+: Multi-node clusters for larger models
+
+Important Considerations:
+  • Actual requirements may vary by framework (PyTorch, TensorFlow, etc.)
+  • Quantization (INT8, INT4) can significantly reduce VRAM needs
+  • Flash Attention and other optimizations may lower requirements
+  • Multi-node setups require high-speed interconnect (NVLink, InfiniBand)
+
+═══════════════════════════════════════════════════════════════════
+NEXT STEPS
+═══════════════════════════════════════════════════════════════════
+
+1. Review the recommended configurations above
+2. Consider your growth plans over the next 18-30 months
+3. Contact your HP representative to:
+   - Discuss specific GPU configurations
+   - Review pricing and availability
+   - Schedule a technical consultation if needed
+   - Explore financing options
+
+For Questions or Orders:
+  Contact your HP Sales Representative
+  or visit: www.hp.com/workstations
+
+═══════════════════════════════════════════════════════════════════
+Report Settings: Batch={batch_size}, Context={sequence_length} tokens
+═══════════════════════════════════════════════════════════════════
 """
     return report
 
@@ -694,69 +991,388 @@ if st.button("Calculate Requirements"):
 
     st.markdown("---")
 
-    # ===== WORKSTATION RECOMMENDATION =====
-    recommendation = recommend_workstation_smart(vram['total'])
+    # ===== WORKSTATION RECOMMENDATION WITH HEADROOM LOGIC =====
 
-    st.markdown("## 🖥️ Recommended Workstation")
+    # Get minimum platform
+    minimum_rec = recommend_workstation_smart(vram['total'])
 
-    # Multi-node warning if applicable
-    if recommendation.get("multi_node", False):
-        # Get platform name from recommendation
-        platform_name = recommendation['platform'].split('x')[1].strip() if 'x' in recommendation['platform'] else \
-        recommendation['platform']
+    # Define headroom targets
+    headroom_targets = {
+        "Inference": 30,
+        "Fine-Tuning": 30,
+        "Training": 50
+    }
+    target_headroom_pct = headroom_targets.get(workload, 30)
 
+    # Calculate actual headroom for minimum platform
+    if minimum_rec.get("workstation"):
+        min_platform_vram = minimum_rec["workstation"]["max_vram_total"]
+    else:
+        # For multi-node setups, extract total VRAM
+        min_platform_vram = minimum_rec.get("max_vram_total", vram['total'])
+
+    min_headroom_gb = min_platform_vram - vram['total']
+    min_headroom_pct = (min_headroom_gb / vram['total']) * 100 if vram['total'] > 0 else 0
+
+    # Determine if we need to show future-proof option
+    meets_target = min_headroom_pct >= target_headroom_pct
+
+    # Find next tier up for future-proof (if needed)
+    if not meets_target:
+        # Calculate target VRAM with headroom
+        future_proof_vram_target = vram['total'] * (1 + target_headroom_pct / 100)
+
+        # Get recommendation for future-proof target - this returns the right platform automatically
+        future_proof_rec = recommend_workstation_smart(future_proof_vram_target)
+
+        # If same platform as minimum, force bump to next tier by adding 1 GB to push it over
+        if future_proof_rec["platform"] == minimum_rec["platform"]:
+            # Bump VRAM requirement slightly to force next tier
+            if min_platform_vram <= 20:
+                future_proof_rec = recommend_workstation_smart(21)
+            elif min_platform_vram <= 96:
+                future_proof_rec = recommend_workstation_smart(97)
+            elif min_platform_vram <= 192:
+                future_proof_rec = recommend_workstation_smart(193)
+            elif min_platform_vram <= 384:
+                future_proof_rec = recommend_workstation_smart(385)
+            elif min_platform_vram <= 768:
+                future_proof_rec = recommend_workstation_smart(769)
+            else:
+                future_proof_rec = recommend_workstation_smart(1537)
+
+        # Calculate future-proof platform VRAM
+        # Check multi-node FIRST before checking workstation
+        if future_proof_rec.get("multi_node") and future_proof_rec.get("total_gpus"):
+            # Multi-node setup - calculate from total GPUs
+            fp_platform_vram = future_proof_rec["total_gpus"] * 96
+        elif future_proof_rec.get("workstation"):
+            # Single workstation
+            fp_platform_vram = future_proof_rec["workstation"]["max_vram_total"]
+        elif future_proof_rec.get("total_gpus"):
+            # Cluster without workstation - calculate from total GPUs
+            fp_platform_vram = future_proof_rec["total_gpus"] * 96
+        else:
+            # Fallback
+            fp_platform_vram = min_platform_vram * 2
+
+        fp_headroom_gb = fp_platform_vram - vram['total']
+        fp_headroom_pct = (fp_headroom_gb / vram['total']) * 100 if vram['total'] > 0 else 0
+
+    # ===== DISPLAY LOGIC =====
+    st.markdown("## 🖥️ Platform Recommendations")
+
+    # Check if this is beyond single workstation (>384 GB)
+    if vram['total'] > 384:
         st.markdown(f"""
         <div class='multi-node-warning'>
-            ⚠️ <strong>Multi-Platform Setup Likely Required</strong><br>
-            Likely need {platform_name} cluster.<br>
-            Estimated configuration: {recommendation['nodes']} {platform_name} with approximately {recommendation['total_gpus']} NVIDIA RTX PRO 6000 Blackwell Max-Q 96GB GPUs.<br>
-            <em>Further consultation recommended to optimize configuration.</em>
+            ⚠️ <strong>Enterprise GPU Cluster Required</strong><br>
+            Your model requires approximately <strong>{math.ceil(vram['total'] / 96)} GPUs</strong> (96GB each).<br>
+            Estimated Total VRAM: <strong>{vram['total']:.1f} GB</strong><br>
         </div>
         """, unsafe_allow_html=True)
 
-    st.success(f"**{recommendation['platform']}**")
+        st.info(
+            "**For models of this size:** We recommend consulting with HP's AI infrastructure team to design an optimal multi-node setup tailored to your specific requirements.")
 
-    # Show workstation specs if available
-    if recommendation.get("workstation"):
-        ws = recommendation["workstation"]
+        # Show example configurations
+        with st.expander("💡 Example Multi-Node Configurations"):
+            num_gpus = math.ceil(vram['total'] / 96)
 
-        # Determine platform name for display
-        if recommendation.get("multi_node", False):
-            platform_display = f"{ws['name']} "
+            if num_gpus <= 8:
+                st.markdown("""
+                **Possible Setup: 2x Z8 Fury G5**
+                - 2 nodes × 4 GPUs = 8 GPUs total
+                - Total VRAM: 768 GB
+                - Tensor Parallelism: TP=8
+                """)
+            elif num_gpus <= 16:
+                st.markdown("""
+                **Possible Setup: 4x Z8 Fury G5**
+                - 4 nodes × 4 GPUs = 16 GPUs total
+                - Total VRAM: 1,536 GB
+                - Tensor Parallelism: TP=16
+                """)
+            else:
+                st.markdown(f"""
+                **Custom GPU Cluster**
+                - Estimated GPUs needed: {num_gpus}+
+                - Recommended: Cloud or on-premises cluster
+                - Contact HP for enterprise AI infrastructure solutions
+                """)
+
+    else:
+        # ===== NORMAL WORKSTATION LOGIC (≤384 GB) =====
+
+        # Multi-node warning for 192-384 GB range
+        if minimum_rec.get("multi_node", False):
+            st.markdown(f"""
+            <div class='multi-node-warning'>
+                ⚠️ <strong>Multi-Node Setup May Be Required</strong><br>
+                Estimated: {minimum_rec.get('nodes', 'Multiple')} nodes with {minimum_rec.get('total_gpus', 'multiple')} GPUs total.<br>
+                <em>Consultation recommended for optimal setup.</em>
+            </div>
+            """, unsafe_allow_html=True)
+
+        # ===== SCENARIO 1 & 2: MEETS TARGET (Show only minimum) =====
+        if meets_target:
+            st.markdown("### ✅ Good Fit")
+            st.success(f"**{minimum_rec['platform']}**")
+
+            if minimum_rec.get("workstation"):
+                ws = minimum_rec["workstation"]
+
+                # Extract config without total
+                config_clean = minimum_rec['config'].replace(f" = {min_platform_vram}GB total", "").replace(
+                    "(up to 20GB)", "(20GB)")
+
+                st.markdown(f"""
+                <div class='platform-info-box'>
+                    <p><strong>Configuration:</strong> {config_clean}</p>
+                    <p><strong>Total VRAM:</strong> {min_platform_vram} GB</p>
+                    <p><strong>Headroom:</strong> +{min_headroom_gb:.1f} GB ({min_headroom_pct:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                # Simple status message
+                if min_headroom_pct >= target_headroom_pct * 2:
+                    st.info(
+                        f"💡 This platform provides well above the {target_headroom_pct}% target for {workload} workloads.")
+                else:
+                    st.info(
+                        f"💡 This platform meets the {target_headroom_pct}% headroom target for {workload} workloads.")
+
+                # Supported GPUs
+                with st.expander("🎮 View Supported GPUs"):
+                    for gpu in ws['supported_gpus']:
+                        st.markdown(f"• {gpu}")
+
+                # Workload-specific benefits
+                with st.expander(f"💡 Why {target_headroom_pct}% Headroom for {workload}?"):
+                    if workload == "Inference":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Handle 2-4× batch size increase for growing traffic
+                        - Accommodate context window expansion (2K → 8K+ tokens)
+                        - Support next-generation model upgrades
+                        """)
+                    elif workload == "Fine-Tuning":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Upgrade from LoRA to full fine-tuning
+                        - Experiment with larger base models
+                        - Run multiple experiments simultaneously
+                        """)
+                    else:  # Training
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Train models 2-3× larger without upgrade
+                        - Experiment with distributed training
+                        - Build multi-stage training pipelines
+                        """)
+
+                # Optional upgrade
+                with st.expander("💡 Want Even More Headroom?"):
+                    current_idx = next((i for i, w in enumerate(workstations) if w["name"] == ws["name"]), -1)
+                    if current_idx < len(workstations) - 1:
+                        next_ws = workstations[current_idx + 1]
+                        next_headroom_gb = next_ws["max_vram_total"] - vram['total']
+                        next_headroom_pct = (next_headroom_gb / vram['total']) * 100
+
+                        st.markdown(f"""
+                        **{next_ws['name']}**
+                        - Configuration: {next_ws['max_vram_config']}
+                        - Total VRAM: {next_ws['max_vram_total']} GB
+                        - Headroom: +{next_headroom_gb:.1f} GB ({next_headroom_pct:.0f}%)
+                        """)
+
+                        if workload == "Inference":
+                            st.caption("Use case: Multi-model serving, high-concurrency deployments")
+                        elif workload == "Fine-Tuning":
+                            st.caption("Use case: Parallel experiments, larger datasets")
+                        else:
+                            st.caption("Use case: Distributed training, multi-stage pipelines")
+                    else:
+                        st.markdown("**Contact HP for multi-node configurations**")
+
+        # ===== SCENARIO 3: DOES NOT MEET TARGET =====
         else:
-            platform_display = ws['name']
+            # MINIMUM CONFIGURATION
+            st.markdown("### ✅ Good Fit")
+            st.warning(f"**{minimum_rec['platform']}**")
 
+            if minimum_rec.get("workstation"):
+                ws = minimum_rec["workstation"]
 
-        st.markdown(f"""
-        <div class='platform-info-box'>
-            <p><strong>Platform Specifications:</strong></p>
-            <p>• <strong>No. of GPUs Supported:</strong> {gpu_count_options(ws)}</p>
-            <p>• <strong>Max Total VRAM per {platform_display}:</strong> {ws['max_vram_total']} GB ({ws['max_vram_config']})</p>
-        </div>
-        """, unsafe_allow_html=True)
+                # Extract config without total
+                config_clean = minimum_rec['config'].replace(f" = {min_platform_vram}GB total", "").replace(
+                    "(up to 20GB)", "(20GB)")
 
-    # Supported GPUs
-    with st.expander("🎮 View Supported GPUs"):
-        st.markdown("**Compatible GPU Options:**")
-        for gpu in ws['supported_gpus']:
-            st.markdown(f"• {gpu}")
+                st.markdown(f"""
+                <div class='platform-info-box'>
+                    <p><strong>Configuration:</strong> {config_clean}</p>
+                    <p><strong>Total VRAM:</strong> {min_platform_vram} GB</p>
+                    <p><strong>Headroom:</strong> +{min_headroom_gb:.1f} GB ({min_headroom_pct:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
 
-    st.markdown("---")
+                st.warning(
+                    f"⚠️ This platform provides only {min_headroom_pct:.0f}% headroom. {workload} needs {target_headroom_pct}% for optimal performance.")
+
+                with st.expander("🎮 View Supported GPUs"):
+                    for gpu in ws['supported_gpus']:
+                        st.markdown(f"• {gpu}")
+
+            st.markdown("")
+
+            # FUTURE-PROOF CONFIGURATION
+            st.markdown(f"### 🚀 Better Choice")
+            st.success(f"**{future_proof_rec['platform']}**")
+
+            # Check multi-node FIRST before checking workstation
+            if future_proof_rec.get("multi_node"):
+                # Multi-node setup - use the explicit max_vram_total
+                fp_config_clean = future_proof_rec['config'].replace(f" = {fp_platform_vram}GB total", "")
+
+                st.markdown(f"""
+                <div class='platform-info-box' style='border-color: #4ba3c7; background: linear-gradient(135deg, #e6f7ff 0%, #d1f0ff 100%);'>
+                    <p><strong>Configuration:</strong> {fp_config_clean}</p>
+                    <p><strong>Total VRAM:</strong> {fp_platform_vram} GB</p>
+                    <p><strong>Headroom:</strong> +{fp_headroom_gb:.1f} GB ({fp_headroom_pct:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.info(f"💡 This multi-node platform meets the {target_headroom_pct}% headroom target for {workload} workloads.")
+
+                # Workload-specific benefits
+                with st.expander(f"💡 Why {target_headroom_pct}% Headroom for {workload}?"):
+                    if workload == "Inference":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Handle 2-4× batch size increase for growing traffic
+                        - Accommodate context window expansion (2K → 8K+ tokens)
+                        - Support next-generation model upgrades
+                        """)
+                    elif workload == "Fine-Tuning":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Upgrade from LoRA to full fine-tuning
+                        - Experiment with larger base models
+                        - Run multiple experiments simultaneously
+                        """)
+                    else:  # Training
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Train models 2-3× larger without upgrade
+                        - Experiment with distributed training
+                        - Build multi-stage training pipelines
+                        """)
+
+                # Show base workstation GPUs if available
+                if future_proof_rec.get("workstation"):
+                    fp_ws = future_proof_rec["workstation"]
+                    with st.expander("🎮 View Supported GPUs (per node)"):
+                        for gpu in fp_ws['supported_gpus']:
+                            st.markdown(f"• {gpu}")
+
+            elif future_proof_rec.get("workstation"):
+                # Single workstation with workstation data
+                fp_ws = future_proof_rec["workstation"]
+
+                # Extract config without total
+                fp_config_clean = future_proof_rec['config'].replace(f" = {fp_platform_vram}GB total", "").replace(
+                    "(up to 20GB)", "(20GB)")
+
+                st.markdown(f"""
+                <div class='platform-info-box' style='border-color: #4ba3c7; background: linear-gradient(135deg, #e6f7ff 0%, #d1f0ff 100%);'>
+                    <p><strong>Configuration:</strong> {fp_config_clean}</p>
+                    <p><strong>Total VRAM:</strong> {fp_platform_vram} GB</p>
+                    <p><strong>Headroom:</strong> +{fp_headroom_gb:.1f} GB ({fp_headroom_pct:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.info(f"💡 This platform meets the {target_headroom_pct}% headroom target for {workload} workloads.")
+
+                # Workload-specific benefits
+                with st.expander(f"💡 Why {target_headroom_pct}% Headroom for {workload}?"):
+                    if workload == "Inference":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Handle 2-4× batch size increase for growing traffic
+                        - Accommodate context window expansion (2K → 8K+ tokens)
+                        - Support next-generation model upgrades
+                        """)
+                    elif workload == "Fine-Tuning":
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Upgrade from LoRA to full fine-tuning
+                        - Experiment with larger base models
+                        - Run multiple experiments simultaneously
+                        """)
+                    else:  # Training
+                        st.markdown("""
+                        **Headroom benefits:**
+                        - Train models 2-3× larger without upgrade
+                        - Experiment with distributed training
+                        - Build multi-stage training pipelines
+                        """)
+
+                with st.expander("🎮 View Supported GPUs"):
+                    for gpu in fp_ws['supported_gpus']:
+                        st.markdown(f"• {gpu}")
+
+            else:
+                # Multi-node setup - use calculated fp_platform_vram
+                # Extract config without total for cleaner display
+                fp_config_clean = future_proof_rec['config'].replace(" = 768GB total", "").replace(" = 1536GB total",
+                                                                                                   "").replace(
+                    " = 1,536GB total", "")
+
+                st.markdown(f"""
+                <div class='platform-info-box' style='border-color: #4ba3c7; background: linear-gradient(135deg, #e6f7ff 0%, #d1f0ff 100%);'>
+                    <p><strong>Configuration:</strong> {fp_config_clean}</p>
+                    <p><strong>Total VRAM:</strong> {fp_platform_vram} GB</p>
+                    <p><strong>Headroom:</strong> +{fp_headroom_gb:.1f} GB ({fp_headroom_pct:.0f}%)</p>
+                </div>
+                """, unsafe_allow_html=True)
+
+                st.info(f"💡 This platform meets the {target_headroom_pct}% headroom target for {workload} workloads.")
 
     # System Requirements
     st.markdown("## 💻 System RAM Requirements")
-    ram_needed = max(8, math.ceil(vram['total'] * 2))  # Minimum 8 GB
+    ram_multipliers = {
+        "Inference": 1.5,
+        "Fine-Tuning": 2.0,
+        "Training": 2.5
+    }
+    ram_multiplier = ram_multipliers.get(workload, 2.0)
+    ram_needed = max(16, math.ceil(vram['total'] * ram_multiplier))
+
     st.markdown(f"""
     **Recommended System RAM:** {ram_needed} GB minimum
 
-    *General rule: 2× VRAM for optimal performance*
+    *Rule for {workload}: {ram_multiplier}× VRAM*
     """)
-
 
     # Download Report
     st.markdown("## 📥 Export Report")
-    report_content = generate_report(model_name, params, precision, workload, batch_size, sequence_length, vram,
-                                     recommendation)
+
+    # Prepare report data - include future-proof if doesn't meet target
+    if meets_target:
+        # Only minimum recommendation
+        report_content = generate_report(
+            model_name, params, precision, workload, batch_size, sequence_length, vram,
+            minimum_rec, min_platform_vram, min_headroom_gb, min_headroom_pct,
+            target_headroom=target_headroom_pct
+        )
+    else:
+        # Both minimum and future-proof recommendations
+        report_content = generate_report(
+            model_name, params, precision, workload, batch_size, sequence_length, vram,
+            minimum_rec, min_platform_vram, min_headroom_gb, min_headroom_pct,
+            future_proof_rec, fp_platform_vram, fp_headroom_gb, fp_headroom_pct,
+            target_headroom=target_headroom_pct
+        )
 
     st.download_button(
         label="📄 Download Sizing Report (TXT)",
@@ -765,8 +1381,8 @@ if st.button("Calculate Requirements"):
         mime="text/plain",
         help="Download a detailed text report of this GPU sizing recommendation"
     )
+
     # Footer
     st.markdown("---")
     st.caption("Calculations based on ApXML VRAM methodology | Platform recommendations for HP Z Workstations")
-    st.caption(
-        f"Current settings: Batch size = {batch_size if 'batch_size' in locals() else 1}, Sequence length = {sequence_length if 'sequence_length' in locals() else 2048}")
+    st.caption(f"Current settings: Batch size = {batch_size}, Sequence length = {sequence_length} tokens")
