@@ -81,7 +81,7 @@ Total VRAM = Model Weights + KV Cache + Activations + Overhead
 
 ### Components:
 
-1. **Model Weights**: Parameters � Bytes per parameter
+1. **Model Weights**: Parameters * Bytes per parameter
 2. **KV Cache**: 2 * Layers * Batch * Sequence * Hidden Dim * Bytes
 3. **Activations**: Batch * Sequence * Hidden Dim * Layers * Bytes
 4. **Overhead**: 20% buffer for system operations
