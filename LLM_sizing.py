@@ -228,15 +228,72 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Hide Streamlit menu and footer
+# Hide Streamlit menu and footer - CLOUD DEPLOYMENT VERSION
 hide_streamlit_style = """
     <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    header {visibility: hidden;}
-    .stDeployButton {display:none;}
-    [data-testid="stToolbar"] {display:none;}
-    [data-testid="manage-app-button"] {display:none;}
+    /* Hide all Streamlit branding */
+    #MainMenu {visibility: hidden !important;}
+    footer {visibility: hidden !important;}
+    header {visibility: hidden !important;}
+
+    /* Hide toolbar and manage button - Cloud specific */
+    [data-testid="stToolbar"] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .stActionButton {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    [data-testid="manage-app-button"] {
+        display: none !important;
+    }
+
+    [data-testid="collapsedControl"] {
+        display: none !important;
+    }
+
+    .stDeployButton {
+        display: none !important;
+    }
+
+    button[kind="header"] {
+        display: none !important;
+    }
+
+    /* Cloud-specific floating action button */
+    .stApp > header {
+        display: none !important;
+    }
+
+    .stApp [data-testid="stHeader"] {
+        display: none !important;
+    }
+
+    /* Hide the three-dot menu and settings */
+    button[data-testid="baseButton-header"] {
+        display: none !important;
+    }
+
+    /* Nuclear option - hide everything in top right */
+    .css-1dp5vir, .eyeqlp51, .css-vurnku, .st-emotion-cache-1wrcr25 {
+        display: none !important;
+    }
+
+    /* Hide floating action buttons (Manage app, etc) */
+    div[class*="floating"] {
+        display: none !important;
+    }
+
+    /* Alternative class names Streamlit Cloud uses */
+    .styles_viewerBadge__1yB5_, 
+    .viewerBadge_container__1QSob,
+    .styles_viewerBadge__CvC9N,
+    button[title="View app menu"] {
+        display: none !important;
+    }
     </style>
     """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
