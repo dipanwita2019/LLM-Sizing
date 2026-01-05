@@ -235,6 +235,8 @@ hide_streamlit_style = """
     footer {visibility: hidden;}
     header {visibility: hidden;}
     .stDeployButton {display:none;}
+    [data-testid="stToolbar"] {display:none;}
+    [data-testid="manage-app-button"] {display:none;}
     </style>
     """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
