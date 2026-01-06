@@ -67,7 +67,7 @@ st.markdown("""
     }
 
     .block-container {
-        background: white;
+        background: white !important;
         border-radius: 24px;
         padding: 3rem 2rem;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
@@ -76,7 +76,7 @@ st.markdown("""
 
     .stButton>button {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        color: white !important;
         font-weight: 700;
         border-radius: 16px;
         padding: 1rem 2rem;
@@ -105,40 +105,51 @@ st.markdown("""
     }
 
     h2 {
-        color: #667eea;
+        color: #4c51bf !important;
         font-size: 1.8rem;
         margin-top: 2rem;
         font-weight: 700;
-        border-bottom: 3px solid #667eea;
+        border-bottom: 3px solid #4c51bf;
         padding-bottom: 0.5rem;
     }
 
     h3 {
-        color: #764ba2;
+        color: #000000 !important;
         font-size: 1.3rem;
-        font-weight: 700;
+        font-weight: 700 !important;
         margin-bottom: 1rem;
+        margin-top: 1.5rem;
         display: flex;
         align-items: center;
     }
 
-    .stRadio > label, .stSelectbox > label {
-        font-weight: 600;
-        color: #2d3748;
-        font-size: 1.1rem;
+    .stRadio > label, .stSelectbox > label, .stSlider > label, .stNumberInput > label, label {
+        font-weight: 600 !important;
+        color: #000000 !important;
+        font-size: 1.1rem !important;
+    }
+
+    .stMarkdown p strong, .stMarkdown strong {
+        color: #000000 !important;
+        font-weight: 700 !important;
+    }
+
+    .stRadio div[role="radiogroup"] label {
+        color: #000000 !important;
+        font-weight: 600 !important;
     }
 
     .stRadio > div {
-        background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
         padding: 1rem;
         border-radius: 12px;
-        border: 2px solid transparent;
+        border: 2px solid #a0aec0;
         transition: all 0.3s ease;
     }
 
     .stRadio > div:hover {
-        border-color: #667eea;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: #4c51bf;
+        box-shadow: 0 4px 12px rgba(76, 81, 191, 0.3);
     }
 
     [data-testid="stMetricValue"] {
@@ -150,7 +161,7 @@ st.markdown("""
     }
 
     [data-testid="stMetricLabel"] {
-        color: #4a5568;
+        color: #000000 !important;
         font-weight: 700;
         font-size: 1rem;
         text-transform: uppercase;
@@ -159,21 +170,26 @@ st.markdown("""
 
     .stSelectbox > div > div {
         background: white;
-        border: 2px solid #e2e8f0;
+        border: 2px solid #a0aec0;
         border-radius: 12px;
         transition: all 0.3s ease;
     }
 
     .stSelectbox > div > div:hover {
-        border-color: #667eea;
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        border-color: #4c51bf;
+        box-shadow: 0 4px 12px rgba(76, 81, 191, 0.3);
     }
 
     .stExpander {
-        background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
         border-radius: 16px;
-        border: 2px solid #e2e8f0;
+        border: 2px solid #a0aec0;
         margin: 1rem 0;
+    }
+
+    .streamlit-expanderHeader {
+        color: #000000 !important;
+        font-weight: 600 !important;
     }
 
     .stSlider > div > div > div {
@@ -184,11 +200,11 @@ st.markdown("""
         margin: 2rem 0;
         border: none;
         height: 2px;
-        background: linear-gradient(90deg, transparent, #667eea, transparent);
+        background: linear-gradient(90deg, transparent, #4c51bf, transparent);
     }
 
     .success-box {
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        background: linear-gradient(135deg, #38a169 0%, #2f855a 100%);
         color: white;
         padding: 1rem;
         border-radius: 12px;
@@ -199,31 +215,48 @@ st.markdown("""
 
     [data-testid="stExpander"] {
         background: white;
-        border: 2px solid #e2e8f0;
+        border: 2px solid #a0aec0;
         border-radius: 16px;
     }
 
-    .caption-text {
-        color: #718096;
+    .caption-text, [data-testid="stCaptionContainer"], .stCaption {
+        color: #2d3748 !important;
         font-size: 0.9rem;
         font-style: italic;
+        font-weight: 500 !important;
     }
 
     .platform-info-box {
-        background: linear-gradient(135deg, #f6f8fb 0%, #e9ecef 100%);
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e0 100%);
         border-radius: 12px;
         padding: 1.5rem;
         margin: 1rem 0;
-        border: 2px solid #667eea;
+        border: 2px solid #4c51bf;
+    }
+
+    .platform-info-box p {
+        color: #000000 !important;
+        font-weight: 500;
     }
 
     .multi-node-warning {
-        background: linear-gradient(135deg, #f6ad55 0%, #ed8936 100%);
+        background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
         color: white;
         padding: 1rem;
         border-radius: 12px;
         margin: 1rem 0;
         font-weight: 600;
+    }
+
+    /* Additional high contrast fixes */
+    p, span, div {
+        color: #1a202c !important;
+    }
+
+    /* Subtitle text */
+    .main p {
+        color: #2d3748 !important;
+        font-weight: 500;
     }
     </style>
 """, unsafe_allow_html=True)
