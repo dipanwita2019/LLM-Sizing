@@ -1,0 +1,16 @@
+[theme]
+base="light"
+primaryColor="#667eea"
+backgroundColor="#f0f2f6"
+secondaryBackgroundColor="#ffffff"
+textColor="#1a202c"
+
+[client]
+toolbarMode="minimal"
+
+[ui]
+hideTopBar=true
+hideSidebarNav=true
+
+[browser]
+gatherUsageStats=false
